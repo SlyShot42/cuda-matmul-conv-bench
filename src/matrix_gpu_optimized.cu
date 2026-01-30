@@ -5,17 +5,44 @@
 #include <cuda_runtime.h>
 #include <string.h>
 
-__global__ void matrixMultiplyGPU(float *A, float *B, float *C, int N) {
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
+#define TILE_WIDTH 16
 
-    if (row < N && col < N) {
-        float sum = 0.0f;
-        for (int k = 0; k < N; k++) {
-            sum += A[row * N + k] * B[k * N + col];
+__global__ void matrixMultiplyTiled(float *A, float *B, float *C, int N) { 
+    __shared__ float ds_A[TILE_WIDTH][TILE_WIDTH]; 
+    __shared__ float ds_B[TILE_WIDTH][TILE_WIDTH]; 
+
+    int bx = blockIdx.x; int by = blockIdx.y; 
+    int tx = threadIdx.x; int ty = threadIdx.y; 
+
+    int Row = by * TILE_WIDTH + ty; 
+    int Col = bx * TILE_WIDTH + tx; 
+    
+    float Pvalue = 0.0; 
+    for (int m = 0; m < (N + TILE_WIDTH - 1) / TILE_WIDTH; ++m) { 
+        if (Row < N && (m*TILE_WIDTH+tx) < N) {
+            ds_A[ty][tx] = A[Row * N + m * TILE_WIDTH + tx];
+        } 
+        else {
+            ds_A[ty][tx] = 0.0f; 
         }
-        C[row * N + col] = sum;
-    }
+
+        if (Col < N && (m*TILE_WIDTH+ty) < N) {
+            ds_B[ty][tx] = B[(m*TILE_WIDTH + ty) * N + Col];
+        } 
+        else {
+            ds_B[ty][tx] = 0.0f; 
+        }
+        __syncthreads(); 
+        
+        for (int k = 0; k < TILE_WIDTH; ++k) {
+            Pvalue += ds_A[ty][k] * ds_B[k][tx];
+        } 
+        __syncthreads(); 
+    } 
+    
+    if (Row < N && Col < N) {
+        C[Row * N + Col] = Pvalue;
+    } 
 }
 
 int main(int argc, char **argv) {
@@ -39,13 +66,13 @@ int main(int argc, char **argv) {
     cudaMemcpy(d_A, A, size, cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, B, size, cudaMemcpyHostToDevice);
 
-    dim3 block(16, 16);
+    dim3 block(TILE_WIDTH, TILE_WIDTH);
     int gridx = (int)ceil((float)N / block.x);
     int gridy = (int)ceil((float)N / block.y);
     dim3 grid(gridx, gridy);
 
     clock_t start = clock();
-    matrixMultiplyGPU<<<grid, block>>>(d_A, d_B, d_C, N);
+    matrixMultiplyTiled<<<grid, block>>>(d_A, d_B, d_C, N);
     cudaDeviceSynchronize();
     clock_t end = clock();
 
@@ -65,3 +92,4 @@ int main(int argc, char **argv) {
     cudaFree(d_C);
     return 0;
 }
+
