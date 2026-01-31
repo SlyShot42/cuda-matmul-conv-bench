@@ -1,5 +1,4 @@
-matrix_cpu
-matrix_gpu
+bin
 venv
 __pycache__/
 *.pyc
