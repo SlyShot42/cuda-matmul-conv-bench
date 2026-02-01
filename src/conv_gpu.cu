@@ -39,11 +39,11 @@ unsigned int* loadPgm(char *path, int *M) {
     fgetc(f);
 
     size_t size = (size_t)(*M) * (*M);
-    unsigned char *tmp = malloc(size);
+    unsigned char *tmp = (unsigned char *)malloc(size);
     fread(tmp, 1, size, f);
     fclose(f);
 
-    unsigned int *A = malloc(size * sizeof(unsigned int));
+    unsigned int *A = (unsigned int *)malloc(size * sizeof(unsigned int));
     for (size_t i = 0; i < size; i++) {
         A[i] = tmp[i];
     }
