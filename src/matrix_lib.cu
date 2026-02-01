@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
+#include <math.h>
 
 #define TILE_WIDTH 16
 
@@ -62,4 +63,54 @@ extern "C" void gpu_matrix_multiply(float *h_A, float *h_B, float *h_C, int N) {
     cudaMemcpy(h_C, d_C, size, cudaMemcpyDeviceToHost);
 
     cudaFree(d_A); cudaFree(d_B); cudaFree(d_C);
+}
+
+__global__ void conv2dGPU(unsigned int *d_A, int *d_k, int *d_B, int M, int N) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row < M && col < M) {
+        int sum = 0;
+        int r = N / 2;
+        for (int u = 0; u < N; u++) {
+            int x = row + u - r;
+            for (int v = 0; v < N; v++) {
+                int y = col + v - r;
+                if (x >= 0 && x < M && y >= 0 && y < M) {
+                    sum += d_A[x * M + y] * d_k[u * N + v];
+                }
+            }
+        }
+        d_B[row * M + col] = sum;
+    }
+}
+
+extern "C" void gpu_convolution(unsigned int *h_A, int *h_k, int *h_B, int M, int N) {
+    size_t size_A = M * M * sizeof(unsigned int);
+    size_t size_k = N * N * sizeof(int);
+    size_t size_B = M * M * sizeof(int);
+
+    unsigned int *d_A;
+    int *d_k, *d_B;
+
+    cudaMalloc((void **)&d_A, size_A);
+    cudaMalloc((void **)&d_k, size_k);
+    cudaMalloc((void **)&d_B, size_B);
+
+    cudaMemcpy(d_A, h_A, size_A, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_k, h_k, size_k, cudaMemcpyHostToDevice);
+
+    dim3 block(16, 16);
+    int gridx = (int)ceil((float)M / block.x);
+    int gridy = (int)ceil((float)M / block.y);
+    dim3 grid(gridx, gridy);
+
+    conv2dGPU<<<grid, block>>>(d_A, d_k, d_B, M, N);
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(h_B, d_B, size_B, cudaMemcpyDeviceToHost);
+
+    cudaFree(d_A);
+    cudaFree(d_k);
+    cudaFree(d_B);
 }
