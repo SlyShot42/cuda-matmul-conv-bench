@@ -8,3 +8,12 @@ CPU (C),bumblebee.png,sharpen7,0.0076,0.029169,0.115896
 CPU (C),hut.png,edge,0.001564,0.006228,0.026172
 CPU (C),hut.png,sharpen,0.003728,0.015276,0.061458
 CPU (C),hut.png,sharpen7,0.007234,0.029267,0.116287
+GPU (CUDA),boat.png,edge,0.019859,0.00033,0.000599
+GPU (CUDA),boat.png,sharpen,7.1e-05,0.000181,0.000663
+GPU (CUDA),boat.png,sharpen7,0.000115,0.000313,0.001174
+GPU (CUDA),bumblebee.png,edge,0.000295,0.000296,0.00059
+GPU (CUDA),bumblebee.png,sharpen,6.1e-05,0.000177,0.000642
+GPU (CUDA),bumblebee.png,sharpen7,9.5e-05,0.000301,0.001144
+GPU (CUDA),hut.png,edge,0.000237,0.000306,0.000568
+GPU (CUDA),hut.png,sharpen,6.1e-05,0.000167,0.000572
+GPU (CUDA),hut.png,sharpen7,9.1e-05,0.000277,0.001008
