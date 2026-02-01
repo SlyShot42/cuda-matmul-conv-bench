@@ -1,0 +1,10 @@
+Implementation,Image,Kernel,512,1024,2048
+CPU (C),boat.png,edge,0.001644,0.006578,0.031503
+CPU (C),boat.png,sharpen,0.003773,0.015531,0.062337
+CPU (C),boat.png,sharpen7,0.007317,0.029962,0.117976
+CPU (C),bumblebee.png,edge,0.001648,0.006708,0.029768
+CPU (C),bumblebee.png,sharpen,0.004034,0.015315,0.061104
+CPU (C),bumblebee.png,sharpen7,0.007376,0.029654,0.117289
+CPU (C),hut.png,edge,0.00184,0.006645,0.029725
+CPU (C),hut.png,sharpen,0.004059,0.015343,0.060731
+CPU (C),hut.png,sharpen7,0.007532,0.029385,0.11849
