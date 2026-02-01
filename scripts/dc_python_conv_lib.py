@@ -7,7 +7,7 @@ from scripts.lib.utils import upsert_conv_runtime_data
 
 CONV_CSV_PATH = "../data/conv_runtime_data.csv"
 
-lib = ctypes.cdll.LoadLibrary("../src/bin/libconv.so")
+lib = ctypes.cdll.LoadLibrary("../src/bin/libmatrix.so")
 
 lib.gpu_convolution.argtypes = [
     np.ctypeslib.ndpointer(dtype=np.uint32, ndim=1, flags="C_CONTIGUOUS"),
@@ -17,40 +17,44 @@ lib.gpu_convolution.argtypes = [
     ctypes.c_int,
 ]
 
-edge_detection = np.array([
-    [-1, -1, -1],
-    [-1,  8, -1],
-    [-1, -1, -1]
-], dtype=np.int32)
+edge_detection = np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]], dtype=np.int32)
 
 
-sharpen5 = np.array([
-    [ 0,  0, -1,  0,  0],
-    [ 0, -1, -2, -1,  0],
-    [-1, -2, 25, -2, -1],
-    [ 0, -1, -2, -1,  0],
-    [ 0,  0, -1,  0,  0]
-], dtype=np.int32)
+sharpen5 = np.array(
+    [
+        [0, 0, -1, 0, 0],
+        [0, -1, -2, -1, 0],
+        [-1, -2, 25, -2, -1],
+        [0, -1, -2, -1, 0],
+        [0, 0, -1, 0, 0],
+    ],
+    dtype=np.int32,
+)
 
 
-sharpen7 = np.array([
-    [ 0,  0,  0, -1,  0,  0,  0],
-    [ 0,  0, -1, -2, -1,  0,  0],
-    [ 0, -1, -2, -3, -2, -1,  0],
-    [-1, -2, -3, 49, -3, -2, -1],
-    [ 0, -1, -2, -3, -2, -1,  0],
-    [ 0,  0, -1, -2, -1,  0,  0],
-    [ 0,  0,  0, -1,  0,  0,  0]
-], dtype=np.int32)
+sharpen7 = np.array(
+    [
+        [0, 0, 0, -1, 0, 0, 0],
+        [0, 0, -1, -2, -1, 0, 0],
+        [0, -1, -2, -3, -2, -1, 0],
+        [-1, -2, -3, 49, -3, -2, -1],
+        [0, -1, -2, -3, -2, -1, 0],
+        [0, 0, -1, -2, -1, 0, 0],
+        [0, 0, 0, -1, 0, 0, 0],
+    ],
+    dtype=np.int32,
+)
+
 
 def run_conv_cpu(A, k, M, N):
     B = np.zeros((M, M), dtype=np.int32)
-    
+
     start = time.time()
     lib.gpu_convolution(A.ravel(), k.ravel(), B.ravel(), M, N)
     end = time.time()
-    
+
     return end - start
+
 
 def collect_conv_runtime_data(img_path):
     Ms = 2 ** np.arange(9, 12)
@@ -73,6 +77,7 @@ def collect_conv_runtime_data(img_path):
         sharpen7_times.append(float(sharpen7_time))
 
     return Ms, np.array(edge_times), np.array(sharpen_times), np.array(sharpen7_times)
+
 
 Ms, edge_times, sharpen_times, sharpen7_times = collect_conv_runtime_data(
     "../data/raw_input/boat.png"
