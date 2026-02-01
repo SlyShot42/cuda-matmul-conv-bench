@@ -21,18 +21,15 @@ void conv2dCPU(unsigned int *A, int *k, int *B, int M, int N) {
 	}
 }
 
-unsigned int* load_pgm(char *path, int *M) {
+unsigned int* loadPgm(char *path, int *M) {
     FILE *f = fopen(path, "rb");
     if (!f) { return NULL; }
 
-    char magic[3];
-    fscanf(f, "%2s", magic);
-    if (magic[0] != 'P' || magic[1] != '5') {
-        fclose(f);
-        return NULL;
-    }
+    char format[3];
+    fscanf(f, "%2s", format);
 
     fscanf(f, "%d %d", M, M);
+
     int maxval;
     fscanf(f, "%d", &maxval);
     fgetc(f);
@@ -43,31 +40,35 @@ unsigned int* load_pgm(char *path, int *M) {
     fclose(f);
 
     unsigned int *A = malloc(size * sizeof(unsigned int));
-    for (size_t i = 0; i < size; i++) A[i] = tmp[i];
+    for (size_t i = 0; i < size; i++) {
+        A[i] = tmp[i];
+    }
 
     free(tmp);
     return A;
 }
 
 
-void save_raw(char *path, int *B, int M) {
+void saveRaw(char *path, int *B, int M) {
     FILE *f = fopen(path, "wb");
-    if (!f) { perror("fopen"); exit(1); }
+    if (!f) {
+        perror("fopen"); exit(1); 
+    }
     fwrite(B, sizeof(int), M*M, f);
     fclose(f);
 }
 
-double run_time_conv2dCPU(char *path,unsigned int *A, int *k, int *B, int M, int N) {
+double runtimeConv2dCPU(char *path,unsigned int *A, int *k, int *B, int M, int N) {
     clock_t start = clock();
     conv2dCPU(A, k, B, M, N);
     clock_t end = clock();
     double elapsed = (double)(end - start) / CLOCKS_PER_SEC;
-    save_raw(path, B, M);
+    saveRaw(path, B, M);
     return elapsed;
 }
 
 
-int edge_detection[9] = {
+int edgeDetection[9] = {
     -1, -1, -1,
     -1,  8, -1,
     -1, -1, -1
@@ -102,7 +103,7 @@ int main(int argc, char **argv) {
     char *inputImagePath = argv[1];
     char *outputDir = argv[2];
     int M;
-    unsigned int *A = load_pgm(inputImagePath, &M);
+    unsigned int *A = loadPgm(inputImagePath, &M);
     
     if (!A) {
         printf("Invalid image\n");
@@ -120,13 +121,13 @@ int main(int argc, char **argv) {
     snprintf(outputSharpenPath, sizeof(outputSharpenPath), "%s/output_sharpen_cpu.bin", outputDir);
     snprintf(outputSharpen7Path, sizeof(outputSharpen7Path), "%s/output_sharpen7_cpu.bin", outputDir);
 
-    double elapsed = run_time_conv2dCPU(outputEdgePath, A, edge_detection, B, M, 3);
+    double elapsed = runtimeConv2dCPU(outputEdgePath, A, edgeDetection, B, M, 3);
     printf("Edge Detection CPU execution time (M=%d, N=%d): %f seconds\n", M, 3, elapsed);
 
-    elapsed = run_time_conv2dCPU(outputSharpenPath, A, sharpen5, B, M, 5);
+    elapsed = runtimeConv2dCPU(outputSharpenPath, A, sharpen5, B, M, 5);
     printf("Sharpen CPU execution time (M=%d, N=%d): %f seconds\n", M, 5, elapsed);
 
-    elapsed = run_time_conv2dCPU(outputSharpen7Path, A, sharpen7, B, M, 7);
+    elapsed = runtimeConv2dCPU(outputSharpen7Path, A, sharpen7, B, M, 7);
     printf("Sharpen7 CPU execution time (M=%d, N=%d): %f seconds\n", M, 7, elapsed);
 
     free(A);
